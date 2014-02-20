@@ -5,7 +5,7 @@ load 'link.rb'
 class JSONToNetworkGraph
 
   def initialize(input, field1, field2)
-    @input = JSON.parse(File.read(input))
+    @input = JSON.parse(input)
     @field1 = field1
     @field2 = field2
     @nodehash = Hash.new
@@ -39,7 +39,10 @@ class JSONToNetworkGraph
         source = @nodehash[i[@field1]].getID
         target = @nodehash[i[@field2]].getID
 
-        @linkhash[identifier] = Link.new(source, target, identifier, i)
+        @nodehash[i[@field1]].addLink
+        @nodehash[i[@field2]].addLink
+
+        @linkhash[identifier] = Link.new(source, target, i[@field1], i[@field2], i)
       else
         @linkhash[identifier].update(i)
       end
@@ -61,10 +64,8 @@ class JSONToNetworkGraph
       linkarray.push(l.linkData)
     end
 
-    jsonarray = [:nodes => nodearray, :links => linkarray]
-    puts JSON.pretty_generate(jsonarray)
+    jsonhash = {:nodes => nodearray, :links => linkarray}
+    JSON.pretty_generate(jsonhash)
   end
 
 end
-
-

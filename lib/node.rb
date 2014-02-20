@@ -1,10 +1,9 @@
-require 'json'
-
 class Node
   def initialize(num, name, type, value)
     @num = num
     @name = name
     @type = type
+    @linkcount = 0
     @value = Array.new
     @value.push(value)
   end
@@ -17,7 +16,11 @@ class Node
     return @num
   end
 
+  def addLink
+    @linkcount += 1
+  end
+
   def nodeData
-    json_array = [:id => @name, :type => @type]
+    json_hash = {:id => @name, :type => @type, :linkcount => @linkcount, :data => @value}
   end
 end

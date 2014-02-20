@@ -1,8 +1,9 @@
 class Link
-  def initialize(source, target, names, value)
+  def initialize(source, target, field1, field2, value)
     @source = source
     @target = target
-    @names = names
+    @field1 = field1
+    @field2 = field2
     @value = Array.new
     @value.push(value)
   end
@@ -12,6 +13,6 @@ class Link
   end
 
   def linkData
-    link_array = [:source => @source, :target => @target]
+    link_hash = {:source => @source, :target => @target, :field1 => @field1, :field2 => @field2, :data => @value}
   end
 end

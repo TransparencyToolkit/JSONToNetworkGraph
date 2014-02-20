@@ -1,1 +1,5 @@
-Generates network graphs from a JSON. In progress.
+This gem generates the link and node data needed for a network graph from any JSON.
+
+To use, download the jsontonetworkgraph gem and require it. Then-
+n = JSONToNetworkGraph.new("jsoninput", "first field to use as node", "second field to use as node")
+n.genJSON
