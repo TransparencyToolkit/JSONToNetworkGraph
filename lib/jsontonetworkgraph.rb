@@ -49,10 +49,24 @@ class JSONToNetworkGraph
     end
   end
 
+  def linkCount
+    @linkhash.each_value do |l|
+      count1 = @nodehash[l.instance_variable_get(:@field1)].instance_variable_get(:@linkcount)
+      count2 = @nodehash[l.instance_variable_get(:@field2)].instance_variable_get(:@linkcount)
+
+      if count1 > count2
+        l.linkCount(count2)
+      else
+        l.linkCount(count1)
+      end
+    end
+  end
+
   # Generate JSON with nodes and links
   def genJSON
     genNodes
     genLinks
+    linkCount
     
     nodearray = Array.new
     @nodehash.each_value do |n|

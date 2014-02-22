@@ -12,7 +12,11 @@ class Link
     @value.push(toadd)
   end
 
+  def linkCount(num)
+    @lowestLinkCount = num
+  end
+
   def linkData
-    link_hash = {:source => @source, :target => @target, :field1 => @field1, :field2 => @field2, :data => @value}
+    link_hash = {:source => @source, :target => @target, :field1 => @field1, :field2 => @field2, :lowestLinkCount => @lowestLinkCount, :data => @value}
   end
 end
