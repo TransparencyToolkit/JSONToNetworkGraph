@@ -1,5 +1,5 @@
-This gem generates the link and node data needed for a network graph from any JSON.
+This gem generates the link and node data needed for a network graph from any JSON. It also allows you to group nodes by a field (for example, group all people by the companies they work for). If you do not want to group nodes, just put in the same field name again.
 
 To use, download the jsontonetworkgraph gem and require it. Then-
-n = JSONToNetworkGraph.new("jsoninput", "first field to use as node", "second field to use as node")
+n = JSONToNetworkGraph.new("jsoninput", "first field to use as node", "field to group first nodes", "second field to use as node", "field to group second nodes by")
 n.genJSON

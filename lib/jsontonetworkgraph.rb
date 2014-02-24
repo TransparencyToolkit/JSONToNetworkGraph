@@ -4,12 +4,16 @@ load 'link.rb'
 
 class JSONToNetworkGraph
 
-  def initialize(input, field1, field2)
+  def initialize(input, field1, group1, field2, group2)
     @input = JSON.parse(input)
     @field1 = field1
     @field2 = field2
+    @group1 = group1
+    @group2 = group2
     @nodehash = Hash.new
     @linkhash = Hash.new
+    @grouphash = Hash.new
+    @groupnum = 0
     @nodeindex = 0
   end
 
@@ -104,11 +108,51 @@ class JSONToNetworkGraph
     end
   end
 
+  # Groups nodes based on another field
+  def groupNodes(groupfield, nodetype)
+    @input.each do |i|
+      if !(i[@field1].nil? || i[@field2].nil? || i[@field1].empty? || i[@field2].empty?)
+        
+        # Handles fields that are arrays for groups
+        if i[groupfield].is_a? Array
+          i[groupfield].each do |a|
+            if !@grouphash.include? a
+              @groupnum += 1
+              @grouphash[a] = @groupnum
+            end
+          end
+
+        # Adds non-array values to grouphash
+        else
+          if !@grouphash.include? i[groupfield]
+            @groupnum += 1
+            @grouphash[i[groupfield]] = @groupnum
+          end
+        end
+      end
+    end
+    
+    # Assigns the correct value to each node from the grouphash
+    @nodehash.each_value do |n|
+      if n.getType == nodetype
+        n.getValue.each do |v|
+          if v[groupfield].is_a? Array
+            n.setGroup(@grouphash[n.getName])
+          else
+            n.setGroup(@grouphash[v[groupfield]])
+          end
+        end
+      end
+    end
+  end
+
   # Generate JSON with nodes and links
   def genJSON
     genNodes
     genLinks
     linkCount
+    groupNodes(@group1, @field1)
+    groupNodes(@group2, @field2)
     
     nodearray = Array.new
     @nodehash.each_value do |n|
@@ -125,3 +169,6 @@ class JSONToNetworkGraph
   end
 
 end
+
+n = JSONToNetworkGraph.new(File.read("data.json"), "name", "company", "extract", "extract")
+puts n.genJSON

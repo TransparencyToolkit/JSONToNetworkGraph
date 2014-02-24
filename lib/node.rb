@@ -3,6 +3,7 @@ class Node
     @num = num
     @name = name
     @type = type
+    @group = nil
     @linkcount = 0
     @value = Array.new
     @value.push(value)
@@ -16,11 +17,27 @@ class Node
     return @num
   end
 
+  def getName
+    return @name
+  end
+
+  def getType
+    return @type
+  end
+
+  def getValue
+    return @value
+  end
+  
+  def setGroup(group)
+    @group = group
+  end
+
   def addLink
     @linkcount += 1
   end
 
   def nodeData
-    json_hash = {:id => @name, :type => @type, :linkcount => @linkcount, :data => @value}
+    json_hash = {:name => @name, :type => @type, :group => @group, :linkcount => @linkcount, :data => @value}
   end
 end
