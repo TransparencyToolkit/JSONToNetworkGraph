@@ -1,7 +1,7 @@
 Gem::Specification.new do |s|
   s.name        = 'jsontonetworkgraph'
-  s.version     = '0.0.2'
-  s.date        = '2014-02-21'
+  s.version     = '0.0.3'
+  s.date        = '2014-02-23'
   s.summary     = "Turn JSONs into network graphs"
   s.description = "Generates node and link data from any JSON."
   s.authors     = ["M. C. McGrath"]
