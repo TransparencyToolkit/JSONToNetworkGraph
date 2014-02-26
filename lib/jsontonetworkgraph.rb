@@ -169,6 +169,3 @@ class JSONToNetworkGraph
   end
 
 end
-
-n = JSONToNetworkGraph.new(File.read("data.json"), "name", "company", "extract", "extract")
-puts n.genJSON
