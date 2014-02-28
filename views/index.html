@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Network Graph</title>
+        <script type="text/javascript" src="d3/d3.v3.js"></script>
+	<script src="jquery-2.1.0.min.js"></script>
+        <style type="text/css">
+	  html,body {
+	     height: 100%;
+	  }
+
+	  #tooltip {
+	     position: absolute;
+	     width: auto;
+	     height: auto;
+	     padding: 10px;
+	     background-color: #8ED0E0;
+             opacity: 0.9;
+             text-align: center;
+	     border-radius: 5px;
+	     pointer-events: none;
+	  }
+
+	  #tooltip.hidden {
+	     display: none;
+	  }
+
+	  #tooltip p {
+	     margin: 0;
+	     font-family: sans-serif;
+	     font-size: 16px;
+	 }
+         
+	 #info {
+             position: relative;
+	     float: left;
+             width: 19%;
+	     height: 100%;
+	     padding: 10px;
+	     overflow: auto;
+	     word-wrap: break-word;
+	     border-radius: 1px;
+             border-color: #52B7D0;
+             border-style: solid;
+             background-color: #8ED0E0;
+	 }
+        
+        
+	  #svgdiv {
+              position: relative;
+	      float: right;
+          }
+        </style>
+    </head>
+    <body>
+      <div id="info">
+        <form><input type="text" id="search" name="search" placeholder="Search"></form>
+	<p><span id="gentext"></span></p>
+      </div>
+        <div id="tooltip" class="hidden">
+	  <p><span id="content"></span></p>
+	</div>
+	
+
+        <script type="text/javascript">
+            var width = 1000;
+	    var height = 500;
+	    var dataset;
+	    
+	    var svg = d3.select("body")
+                        .append("svg")
+                        .attr("width", "79%")
+                        .attr("height", "100%");
+
+	    d3.json("network.json", function(error, data){
+	        dataset = data;
+	        var force = d3.layout.force()
+	                             .nodes(data.nodes)
+	                             .links(data.links)
+                                     .size([width, height])
+                                     .linkDistance([50])
+                                     .charge([-120])
+                                     .start();      
+	        
+	        var links = svg.selectAll("line")
+                               .data(data.links.filter(function(d){
+                                   return d.lowestLinkCount > 2;
+                               }))
+                               .enter()
+                               .append("line")
+                               .style("stroke", "#ccc")
+                               .style("stroke-width", 1);
+
+	        var nodes = svg.selectAll("circle")
+                               .data(data.nodes.filter(function(d){
+                                   return d.linkcount > 2;
+                               }))
+                               .enter()
+                               .append("circle")
+                               .attr("r", 10)
+                               .style("fill", function(d){
+                                   if(d.type === "name"){
+                                       return "blue";
+                                   } else {
+                                       return "red";
+                                   }
+	                       })
+                               .attr("id", function(d){
+                                   return d.id;
+                               })
+	                       .call(force.drag);
+
+	                       
+	                       nodes.on("mouseover", function(d){
+                                   d3.select(this)
+                                     .style("fill", "yellow");
+
+	                           links.filter(function(e){
+                                      if((e.field1 == d.name) || (e.field2 == d.name)){
+	                                  d3.select(this)
+                                            .style("stroke", "yellow")
+                                            .style("stroke-width", 4);
+                                         
+                                          nodes.filter(function(f){
+                                             if((e.field1 == f.name) || (e.field1 == f.name)){
+                                                d3.select(this).style("fill", "yellow");
+                                             }
+                                          });
+                                          return e;
+	                              }
+                                   });
+	                            
+	                           d3.select("#tooltip")
+                                     .style("left", (d.x+150)+"px")
+	                             .style("top", d.y+"px")
+                                     .select("#content")
+                                     .text(d.name);
+
+	                           d3.select("#tooltip").classed("hidden", false);
+                               })
+                               .on("mouseout", function(d){
+                                   d3.select(this)
+	                             .style("fill", function(d){
+                                          if(d.type === "name"){
+                                           return "blue";
+                                          } else {
+                                           return "red";
+                                          }
+                                      });
+
+	                        links.filter(function(e){
+                                    if((e.field1 == d.name) || (e.field2 == d.name)){
+                                          d3.select(this)
+                                            .style("stroke", "#ccc")
+                                            .style("stroke-width", 1);
+    
+                                          nodes.filter(function(f){
+                                             if((e.field1 == f.name) || (e.field1 == f.name)){
+                                                d3.select(this)
+                                                  .style("fill", function(g){
+                                                      if(g.type == "name"){
+                                                          return "blue";
+                                                      } else {
+                                                          return "red";
+                                                      }
+                                                  });
+                                             }
+                                          });
+                                          return e;
+                                      }
+                                   });
+
+	                           d3.select("#tooltip").classed("hidden", true);
+	                       })
+	                       .on("click", function(d){
+                                    var output = "<h2>" + d.name + "</h2>";
+	                            for(var z = 0; z < d.data.length; z++){
+                                       if(d.type == "name"){
+                                          var title = d.data[z]["company"];
+                                       } else {
+                                          var title = d.data[z]["name"];
+                                       }
+
+                                       var item = "<h5>"+ title +"</h5>";
+				       for(var a in d.data[z]){
+				           var label = a + ": ";
+                                           item = item + label.bold() + d.data[z][a] + "<br />";
+				       }
+                                       output = output + item + "<br />";
+                                    }
+                                   
+	                            d3.select("#info")
+                                      .select("#gentext")
+                                      .html(output);
+                               });
+
+                $(document).ready(function(){
+	            $("#search").keyup(function(){
+                        var searchterm = $(this).val();
+                        nodes.filter(function(d){
+			    for(var z = 0; z < d.data.length; z++){
+                               var foundflag = 0;                      
+			       for(var a in d.data[z]){
+			          if(d.data[z][a]){
+                                     if((d.data[z][a].toString()).search(searchterm) != -1){
+				        foundflag = 1;
+                                     }
+			          }
+                               }
+
+                               if(foundflag == 1){
+                                  d3.select(this)
+                                    .style("fill", "yellow");
+                               } else {
+			          d3.select(this)
+                                    .style("fill", function(g){
+                                        if(g.type == "name"){      
+                                            return  "blue";    
+                                        } else {
+                                            return "red"; 
+                                        }
+                                    });
+                               }
+		            }
+                        });
+                    });
+                });
+
+	        force.on("tick", function() {
+                links.attr("x1", function(d) { return d.source.x; })
+                     .attr("y1", function(d) { return d.source.y; })
+                     .attr("x2", function(d) { return d.target.x; })
+                     .attr("y2", function(d) { return d.target.y; });
+
+                nodes.attr("cx", function(d) { return d.x; })
+                     .attr("cy", function(d) { return d.y; });
+                });
+	    });
+        </script>
+    </body>
+</html>     
