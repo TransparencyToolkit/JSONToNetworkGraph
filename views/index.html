@@ -67,7 +67,7 @@
             var width = 1000;
 	    var height = 500;
 	    var dataset;
-	    
+                      
 	    var svg = d3.select("body")
                         .append("svg")
                         .attr("width", "79%")
@@ -75,14 +75,38 @@
 
 	    d3.json("network.json", function(error, data){
 	        dataset = data;
+	        
 	        var force = d3.layout.force()
 	                             .nodes(data.nodes)
 	                             .links(data.links)
                                      .size([width, height])
                                      .linkDistance([50])
                                      .charge([-120])
-                                     .start();      
-	        
+                                     .start();
+				
+                var node_drag = d3.behavior.drag()
+                                  .on("dragstart", dragstart)
+                                  .on("drag", dragmove)
+                                  .on("dragend", dragend);
+
+                function dragstart(d, i){
+                    force.stop();
+                }
+
+                function dragmove(d, i){
+                    d.px += d3.event.dx;
+                    d.py += d3.event.dy;
+                    d.x += d3.event.dx;
+                    d.y += d3.event.dy;
+                    tick();
+                }
+
+                function dragend(d, i){
+                   d.fixed = true;
+                   tick();
+                   force.resume();
+                }
+
 	        var links = svg.selectAll("line")
                                .data(data.links.filter(function(d){
                                    return d.lowestLinkCount > 2;
@@ -90,7 +114,9 @@
                                .enter()
                                .append("line")
                                .style("stroke", "#ccc")
-                               .style("stroke-width", 1);
+                               .style("stroke-width", function(d){
+                                   return d.data.length;
+                               });
 
 	        var nodes = svg.selectAll("circle")
                                .data(data.nodes.filter(function(d){
@@ -98,7 +124,9 @@
                                }))
                                .enter()
                                .append("circle")
-                               .attr("r", 10)
+                               .attr("r", function(d){
+                                   return 5 + d.data.length;
+                               })
                                .style("fill", function(d){
                                    if(d.type === "name"){
                                        return "blue";
@@ -109,7 +137,7 @@
                                .attr("id", function(d){
                                    return d.id;
                                })
-	                       .call(force.drag);
+	                       .call(node_drag);
 
 	                       
 	                       nodes.on("mouseover", function(d){
@@ -119,8 +147,7 @@
 	                           links.filter(function(e){
                                       if((e.field1 == d.name) || (e.field2 == d.name)){
 	                                  d3.select(this)
-                                            .style("stroke", "yellow")
-                                            .style("stroke-width", 4);
+                                            .style("stroke", "yellow");
                                          
                                           nodes.filter(function(f){
                                              if((e.field1 == f.name) || (e.field1 == f.name)){
@@ -152,8 +179,7 @@
 	                        links.filter(function(e){
                                     if((e.field1 == d.name) || (e.field2 == d.name)){
                                           d3.select(this)
-                                            .style("stroke", "#ccc")
-                                            .style("stroke-width", 1);
+                                            .style("stroke", "#ccc");
     
                                           nodes.filter(function(f){
                                              if((e.field1 == f.name) || (e.field1 == f.name)){
@@ -176,28 +202,54 @@
 	                       .on("click", function(d){
                                     var output = "<h2>" + d.name + "</h2>";
 	                            for(var z = 0; z < d.data.length; z++){
-                                       if(d.type == "name"){
-                                          var title = d.data[z]["company"];
-                                       } else {
-                                          var title = d.data[z]["name"];
-                                       }
-
-                                       var item = "<h5>"+ title +"</h5>";
-				       for(var a in d.data[z]){
-				           var label = a + ": ";
-                                           item = item + label.bold() + d.data[z][a] + "<br />";
-				       }
-                                       output = output + item + "<br />";
+                                       output = output + genItem(d, z);
                                     }
-                                   
+                                    
 	                            d3.select("#info")
                                       .select("#gentext")
                                       .html(output);
+                                    checkDuplicate = [];
                                });
 
+                // Generate items to show in sidebar and check for duplicates
+                var checkDuplicate = [];
+                function genItem(d, z){ 
+                   if(d.type == "name"){
+                        var title = d.data[z]["company"];
+                   } else {
+                        var title = d.data[z]["name"];
+                   }
+                   //console.log(d);
+                   // Generate HTML for each item
+                   var item = "";
+                   for(var a in d.data[z]){
+                      var label = a + ": ";
+                      console.log(d.data[z][a]);
+                      item = item + label.bold() + d.data[z][a] + "<br />";
+                   }
+
+                   if(!deDuplicate(item)){
+                      return "<h5>" + title + "</h5>" + item + "<br />";         
+                   } else {
+                      return "";
+                   }
+                 }
+
+               // Checks items for duplicates
+               function deDuplicate(item){
+                   for(var j = 1; j <= checkDuplicate.length; j++){
+                      if(checkDuplicate[j] === item){
+                         return true;
+                      }
+                   }
+                   checkDuplicate.push(item);
+                   return false;
+                }
+                
                 $(document).ready(function(){
 	            $("#search").keyup(function(){
                         var searchterm = $(this).val();
+                        var output = "";
                         nodes.filter(function(d){
 			    for(var z = 0; z < d.data.length; z++){
                                var foundflag = 0;                      
@@ -209,9 +261,10 @@
 			          }
                                }
 
-                               if(foundflag == 1){
+                               if(foundflag == 1 && searchterm.length > 2){
                                   d3.select(this)
                                     .style("fill", "yellow");
+                                  output = output + genItem(d, z);              
                                } else {
 			          d3.select(this)
                                     .style("fill", function(g){
@@ -224,18 +277,27 @@
                                }
 		            }
                         });
+
+                       if(output != ("")){
+                            console.log(searchterm);
+                            d3.select("#info")	
+		              .select("#gentext")
+                              .html("<h2>" + searchterm + "</h2>" + output);
+                            checkDuplicate = [];
+                       }              
                     });
                 });
+                
+	        force.on("tick", tick);
+                function tick() {
+                   links.attr("x1", function(d) { return d.source.x; })
+                        .attr("y1", function(d) { return d.source.y; })
+                        .attr("x2", function(d) { return d.target.x; })
+                        .attr("y2", function(d) { return d.target.y; });
 
-	        force.on("tick", function() {
-                links.attr("x1", function(d) { return d.source.x; })
-                     .attr("y1", function(d) { return d.source.y; })
-                     .attr("x2", function(d) { return d.target.x; })
-                     .attr("y2", function(d) { return d.target.y; });
-
-                nodes.attr("cx", function(d) { return d.x; })
-                     .attr("cy", function(d) { return d.y; });
-                });
+                   nodes.attr("cx", function(d) { return d.x; })
+                        .attr("cy", function(d) { return d.y; });
+                }
 	    });
         </script>
     </body>
