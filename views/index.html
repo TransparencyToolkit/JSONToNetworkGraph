@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8">
         <title>Network Graph</title>
-        <script type="text/javascript" src="d3/d3.v3.js"></script>
+        <script type="text/javascript" src="d3.v3.min.js"></script>
 	<script src="jquery-2.1.0.min.js"></script>
         <style type="text/css">
 	  html,body {
@@ -55,7 +55,7 @@
     </head>
     <body>
       <div id="info">
-        <form><input type="text" id="search" name="search" placeholder="Search"></form>
+        <input type="text" id="search" name="search" placeholder="Search">
 	<p><span id="gentext"></span></p>
       </div>
         <div id="tooltip" class="hidden">
@@ -73,15 +73,15 @@
                         .attr("width", "79%")
                         .attr("height", "100%");
 
-	    d3.json("network.json", function(error, data){
+	    d3.json("network2.json", function(error, data){
 	        dataset = data;
 	        
 	        var force = d3.layout.force()
 	                             .nodes(data.nodes)
 	                             .links(data.links)
                                      .size([width, height])
-                                     .linkDistance([50])
-                                     .charge([-120])
+                                     .linkDistance([200])
+                                     .charge([-200])
                                      .start();
 				
                 var node_drag = d3.behavior.drag()
@@ -109,31 +109,43 @@
 
 	        var links = svg.selectAll("line")
                                .data(data.links.filter(function(d){
-                                   return d.lowestLinkCount > 2;
+                                   return d.lowestLinkCount > 0;
                                }))
                                .enter()
                                .append("line")
                                .style("stroke", "#ccc")
                                .style("stroke-width", function(d){
-                                   return d.data.length;
+                                   if(d.data.length > 10){
+                                     var add = 11;
+                                   } else {
+                                     var add = d.data.length;
+                                   }
+                                   return add;
                                });
 
 	        var nodes = svg.selectAll("circle")
                                .data(data.nodes.filter(function(d){
-                                   return d.linkcount > 2;
+                                   return d.linkcount > 0;
                                }))
                                .enter()
                                .append("circle")
                                .attr("r", function(d){
-                                   return 5 + d.data.length;
+                                   if(d.data.length > 10){
+                                       var add = 11;
+                                   } else {
+                                       var add = d.data.length;
+                                   }
+                                   return 5 + add;
                                })
                                .style("fill", function(d){
-                                   if(d.type === "name"){
-                                       return "blue";
+                                   if(d.type === "company"){
+                                       return "#0000CC";
                                    } else {
-                                       return "red";
+                                       return "#CC0000";
                                    }
 	                       })
+                               .style("stroke", "#000000")
+                               .style("stroke-width", 3)
                                .attr("id", function(d){
                                    return d.id;
                                })
@@ -142,16 +154,17 @@
 	                       
 	                       nodes.on("mouseover", function(d){
                                    d3.select(this)
-                                     .style("fill", "yellow");
+                                     .style("stroke", "#E89619");
 
+                                   
 	                           links.filter(function(e){
                                       if((e.field1 == d.name) || (e.field2 == d.name)){
 	                                  d3.select(this)
-                                            .style("stroke", "yellow");
+                                            .style("stroke", "#E89619");
                                          
                                           nodes.filter(function(f){
-                                             if((e.field1 == f.name) || (e.field1 == f.name)){
-                                                d3.select(this).style("fill", "yellow");
+                                             if((e.field1 == f.name) || (e.field2 == f.name)){
+                                                d3.select(this).style("stroke", "#E89619");
                                              }
                                           });
                                           return e;
@@ -168,13 +181,7 @@
                                })
                                .on("mouseout", function(d){
                                    d3.select(this)
-	                             .style("fill", function(d){
-                                          if(d.type === "name"){
-                                           return "blue";
-                                          } else {
-                                           return "red";
-                                          }
-                                      });
+                                     .style("stroke", "#000000");
 
 	                        links.filter(function(e){
                                     if((e.field1 == d.name) || (e.field2 == d.name)){
@@ -182,15 +189,9 @@
                                             .style("stroke", "#ccc");
     
                                           nodes.filter(function(f){
-                                             if((e.field1 == f.name) || (e.field1 == f.name)){
+                                             if((e.field1 == f.name) || (e.field2 == f.name)){
                                                 d3.select(this)
-                                                  .style("fill", function(g){
-                                                      if(g.type == "name"){
-                                                          return "blue";
-                                                      } else {
-                                                          return "red";
-                                                      }
-                                                  });
+                                                  .style("stroke", "#000000");
                                              }
                                           });
                                           return e;
@@ -214,17 +215,16 @@
                 // Generate items to show in sidebar and check for duplicates
                 var checkDuplicate = [];
                 function genItem(d, z){ 
-                   if(d.type == "name"){
-                        var title = d.data[z]["company"];
-                   } else {
+                   if(d.type == "company"){
                         var title = d.data[z]["name"];
+                   } else {
+                        var title = d.data[z]["company"];
                    }
-                   //console.log(d);
+                   
                    // Generate HTML for each item
                    var item = "";
                    for(var a in d.data[z]){
                       var label = a + ": ";
-                      console.log(d.data[z][a]);
                       item = item + label.bold() + d.data[z][a] + "<br />";
                    }
 
@@ -255,23 +255,28 @@
                                var foundflag = 0;                      
 			       for(var a in d.data[z]){
 			          if(d.data[z][a]){
-                                     if((d.data[z][a].toString()).search(searchterm) != -1){
+                                     if((d.data[z][a].toString()).search(new RegExp(searchterm, "i")) != -1){
 				        foundflag = 1;
                                      }
 			          }
                                }
 
                                if(foundflag == 1 && searchterm.length > 2){
-                                  d3.select(this)
-                                    .style("fill", "yellow");
+                                  if(d["name"].toUpperCase() === searchterm.toUpperCase()){
+                                     d3.select(this)
+                                       .style("fill", "#00CC00");
+                                  } else {
+                                     d3.select(this)
+                                       .style("fill", "#E89619");
+                                  }
                                   output = output + genItem(d, z);              
                                } else {
 			          d3.select(this)
                                     .style("fill", function(g){
-                                        if(g.type == "name"){      
-                                            return  "blue";    
+                                        if(g.type == "company"){      
+                                            return  "#0000CC";    
                                         } else {
-                                            return "red"; 
+                                            return "#CC0000"; 
                                         }
                                     });
                                }
@@ -279,7 +284,6 @@
                         });
 
                        if(output != ("")){
-                            console.log(searchterm);
                             d3.select("#info")	
 		              .select("#gentext")
                               .html("<h2>" + searchterm + "</h2>" + output);
