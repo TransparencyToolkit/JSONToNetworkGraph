@@ -55,26 +55,39 @@
     </head>
     <body>
       <div id="info">
-        <input type="text" id="search" name="search" placeholder="Search">
+        <input type="text" id="search" name="search" placeholder="Search"></input>
 	<p><span id="gentext"></span></p>
       </div>
         <div id="tooltip" class="hidden">
 	  <p><span id="content"></span></p>
 	</div>
-	
 
         <script type="text/javascript">
-            var width = 1000;
-	    var height = 500;
+            var width = $(document).width();
+	    var height = $(document).height();
 	    var dataset;
-                      
+            
+
+	    d3.selection.prototype.putOnTop = function(){
+                return this.each(function(){
+                     this.parentNode.appendChild(this);
+                });
+            };
+	    var zoom = d3.behavior.zoom()
+                         .scaleExtent([1, 10])
+                         .on("zoom", function(){
+                              svg.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+                         });
+
 	    var svg = d3.select("body")
                         .append("svg")
                         .attr("width", "79%")
-                        .attr("height", "100%");
+                        .attr("height", "100%")
+                        .call(zoom);
 
 	    d3.json("network2.json", function(error, data){
 	        dataset = data;
+                var nodecount = 0;
 	        
 	        var force = d3.layout.force()
 	                             .nodes(data.nodes)
@@ -83,13 +96,14 @@
                                      .linkDistance([200])
                                      .charge([-200])
                                      .start();
-				
+
                 var node_drag = d3.behavior.drag()
                                   .on("dragstart", dragstart)
                                   .on("drag", dragmove)
                                   .on("dragend", dragend);
 
                 function dragstart(d, i){
+                    d3.event.sourceEvent.stopPropagation();
                     force.stop();
                 }
 
@@ -154,17 +168,28 @@
 	                       
 	                       nodes.on("mouseover", function(d){
                                    d3.select(this)
-                                     .style("stroke", "#E89619");
-
+                                     .style("stroke", "#E89619")
+                                     .putOnTop();
                                    
 	                           links.filter(function(e){
                                       if((e.field1 == d.name) || (e.field2 == d.name)){
 	                                  d3.select(this)
-                                            .style("stroke", "#E89619");
+                                            .style("stroke", "#E89619")
+                                            .style("stroke-width", function(b){
+	                                        if(b.data.length > 10){
+                                                   var add = 11;
+                                                } else {
+                                                   var add = b.data.length;
+                                                }
+                                                
+                                                return add*2;
+                                            });
                                          
                                           nodes.filter(function(f){
                                              if((e.field1 == f.name) || (e.field2 == f.name)){
-                                                d3.select(this).style("stroke", "#E89619");
+                                                d3.select(this)
+                                                  .style("stroke", "#E89619")
+                                                  .putOnTop();
                                              }
                                           });
                                           return e;
@@ -177,7 +202,9 @@
                                      .select("#content")
                                      .text(d.name);
 
-	                           d3.select("#tooltip").classed("hidden", false);
+	                           d3.select("#tooltip")
+                                     .classed("hidden", false)
+                                     .putOnTop();
                                })
                                .on("mouseout", function(d){
                                    d3.select(this)
@@ -186,7 +213,16 @@
 	                        links.filter(function(e){
                                     if((e.field1 == d.name) || (e.field2 == d.name)){
                                           d3.select(this)
-                                            .style("stroke", "#ccc");
+                                            .style("stroke", "#ccc")
+                                            .style("stroke-width", function(b){
+                                                if(b.data.length > 10){
+                                                   var add = 11;
+                                                } else {
+                                                   var add = b.data.length;
+                                                }
+
+                                                return add;
+                                            });
     
                                           nodes.filter(function(f){
                                              if((e.field1 == f.name) || (e.field2 == f.name)){
@@ -290,7 +326,8 @@
                             checkDuplicate = [];
                        }              
                     });
-                });
+
+                   });
                 
 	        force.on("tick", tick);
                 function tick() {
