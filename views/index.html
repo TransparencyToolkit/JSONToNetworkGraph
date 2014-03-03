@@ -37,7 +37,7 @@
              position: relative;
 	     float: left;
              width: 19%;
-	     height: 100%;
+             height: 93%;
 	     padding: 10px;
 	     overflow: auto;
 	     word-wrap: break-word;
@@ -67,7 +67,6 @@
             var width = $(document).width();
 	    var height = $(document).height();
 	    var dataset;
-            
 
 	    d3.selection.prototype.putOnTop = function(){
                 return this.each(function(){
@@ -94,8 +93,12 @@
 
 	    var svg = d3.select("body")
                         .append("svg")
-                        .attr("width", "77%")
-                        .attr("height", "100%")
+                        .attr("width", "75%")
+                        .attr("height", "93%")
+                        .style("padding", "10px")
+                        .style("border-radius", "1px")
+                        .style("border-color", "#52B7D0")
+                        .style("border-style", "solid")
                         .call(zoom);
 
 	    d3.json("network2.json", function(error, data){
@@ -105,7 +108,7 @@
 	        var force = d3.layout.force()
 	                             .nodes(data.nodes)
 	                             .links(data.links)
-                                     .size([width*0.77, height])
+                                     .size([width, height])
                                      .linkDistance([200])
                                      .charge([-200])
                                      .start();
