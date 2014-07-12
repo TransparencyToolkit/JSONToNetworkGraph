@@ -80,7 +80,7 @@ class JSONToNetworkGraph
 
   # Create or update the appropriate link
   def addupdateLink(fieldvalue1, fieldvalue2, i)
-    identifier = fieldvalue1 + "-" + fieldvalue2
+    identifier = fieldvalue1.to_s + "-" + fieldvalue2.to_s
     if !@linkhash.include? identifier
       source = @nodehash[fieldvalue1].getID
       target = @nodehash[fieldvalue2].getID
@@ -169,3 +169,4 @@ class JSONToNetworkGraph
   end
 
 end
+
